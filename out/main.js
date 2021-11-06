@@ -17072,17 +17072,113 @@ var require_p5_min = __commonJS({
 
 // src/main.ts
 var import_p5 = __toModule(require_p5_min());
+
+// src/shapes/bottom.ts
+var Bottom = class {
+  constructor(p5, lines, color) {
+    this.display = (debug) => {
+      this._p5.stroke("black");
+      this._p5.strokeWeight(2);
+      this._p5.fill(this._color);
+      this._p5.beginShape();
+      for (let i = 0; i < this._lines.length; i++) {
+        if (i < this._lines.length - 1) {
+          this._p5.vertex(this._lines[i].x, this._lines[i].y);
+          this._p5.vertex(this._lines[i + 1].x, this._lines[i + 1].y);
+        }
+      }
+      this._p5.endShape();
+    };
+    this._p5 = p5;
+    this._lines = lines;
+    this._color = color;
+  }
+};
+
+// src/shapes/snowGlobe.ts
+var SnowGlobe = class {
+  constructor(arc, bottom) {
+    this.display = (debug) => {
+      this._arc.display(debug);
+      this._bottom.display(debug);
+    };
+    this._bottom = bottom;
+    this._arc = arc;
+  }
+};
+
+// src/shapes/sun.ts
+var Sun = class {
+  constructor(p5, canvasWidth, canvasHeight) {
+    this.display = (debug) => {
+      this._p5.noFill();
+      this._p5.stroke("black");
+      this._p5.curve(this._curveStartControlX, this._curveStartControlY, this._curveStartX, this._curveStartY, this._curveEndX, this._curveEndY, this._curveEndControlX, this._curveEndControlY);
+    };
+    this._p5 = p5;
+    this.solarForce = 4e3;
+    this._canvasWidth = canvasWidth;
+    this._canvasHeight = canvasHeight;
+    this._curveStartControlX = 0.1 * canvasWidth;
+    this._curveStartControlY = canvasHeight + 7.5 * canvasHeight;
+    this._curveStartX = 0;
+    this._curveStartY = canvasHeight;
+    this._curveEndX = canvasWidth;
+    this._curveEndY = canvasHeight;
+    this._curveEndControlX = 0.9 * canvasWidth;
+    this._curveEndControlY = canvasHeight + 7.5 * canvasHeight;
+  }
+};
+
+// src/reedArtist.ts
+var ReedArtist = class {
+  constructor(p5, hsbColor, canvasWidth, canvasHeight, drawHeight) {
+    this.createSnowGlobe = () => {
+      const bottomShapeLines = this._setupBottom();
+      const bottom = new Bottom(this._p5, bottomShapeLines, this._bottomColor);
+      const sun = new Sun(this._p5, this._canvasWidth, this._canvasHeight);
+      const snowGlobe = new SnowGlobe(sun, bottom);
+      return snowGlobe;
+    };
+    this._setupBottom = () => {
+      const bottomBoxLines = new Array();
+      bottomBoxLines.push(this._p5.createVector(0, this._drawHeight));
+      bottomBoxLines.push(this._p5.createVector(this._canvasWidth, this._drawHeight));
+      bottomBoxLines.push(this._p5.createVector(this._canvasWidth, this._canvasHeight));
+      bottomBoxLines.push(this._p5.createVector(0, this._canvasHeight));
+      bottomBoxLines.push(this._p5.createVector(0, this._drawHeight));
+      return bottomBoxLines;
+    };
+    this._setupColorScheme = (hsbColor) => {
+      this._bottomColor = "hsb(" + hsbColor + ", 40%, 40%)";
+      this._strokeColor = "black";
+    };
+    this._p5 = p5;
+    this._setupColorScheme(hsbColor);
+    this._canvasWidth = canvasWidth;
+    this._canvasHeight = canvasHeight;
+    this._drawHeight = drawHeight;
+  }
+};
+
+// src/main.ts
 var sketch = (p5) => {
   const _canvasWidth = 900;
   const _canvasHeight = 900;
   const _bottomMargin = 150;
+  const _drawHeight = _canvasHeight - _bottomMargin;
   const _debug = false;
-  const snowGlobe = new snowGlobe();
+  const hsbColor = p5.floor(p5.randomGaussian(180, 50));
+  const _backgroundColor = "hsb(" + hsbColor + " , 40%, 80%)";
+  let snowGlobe;
+  const artist = new ReedArtist(p5, hsbColor, _canvasWidth, _canvasHeight, _drawHeight);
   p5.setup = () => {
     p5.createCanvas(_canvasWidth, _canvasHeight);
+    snowGlobe = artist.createSnowGlobe();
   };
   p5.draw = () => {
-    p5.background("hsb(220, 50%, 70%)");
+    p5.background(_backgroundColor);
+    snowGlobe.display(_debug);
   };
   p5.mousePressed = () => {
   };
