@@ -1,5 +1,6 @@
 import P5 from "p5";
-import ReedFactory from "./reedFactory";
+import ReedFactory from "./factories/reedFactory";
+import SnowGlobeFactory from "./factories/snowGlobeFactory";
 import Reed from "./shapes/reed";
 import SnowGlobe from "./shapes/snowGlobe";
 
@@ -12,16 +13,19 @@ export default class ReedArtist
     _canvasWidth: number;
     _drawHeight: number;
     _reedFactory: ReedFactory;
+    _snowGlobeFactory: SnowGlobeFactory;
     shapes: Array<Reed>;
     _snowGlobe: SnowGlobe;
 
     constructor(p5: P5, 
         reedFactory: ReedFactory,  
+        snowGlobeFactory: SnowGlobeFactory,
         canvasWidth: number, 
         canvasHeight: number, 
         drawHeight: number)
     {
         this._p5 = p5;
+        this._snowGlobeFactory = snowGlobeFactory;
         this._reedFactory = reedFactory;
         
         this._canvasWidth = canvasWidth;
@@ -32,7 +36,7 @@ export default class ReedArtist
 
     create = (): void =>
     {
-        this._snowGlobe = this._reedFactory.snowGlobe;
+        this._snowGlobe = this._snowGlobeFactory.create();
         const numberOfReeds = this._p5.floor(this._p5.randomGaussian(1.5, 2));
 		if (numberOfReeds <= 1)
 		{

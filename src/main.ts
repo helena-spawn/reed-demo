@@ -1,7 +1,8 @@
 import P5 from 'p5';
 import ReedArtist from './reedArtist';
-import ReedFactory from './reedFactory';
-import SnowGlobeFactory from './snowGlobeFactory';
+import ReedFactory from './factories/reedFactory';
+import SnowGlobeFactory from './factories/snowGlobeFactory';
+import SunFactory from './factories/sunFactory';
 
 const sketch = (p5: P5) => 
 {
@@ -13,9 +14,10 @@ const sketch = (p5: P5) =>
 
     const hsbColor = p5.floor(p5.randomGaussian(180, 50));
 	const _backgroundColor = "hsb(" + hsbColor + " , 40%, 80%)";
-    const snowGlobeFactory = new SnowGlobeFactory(p5, hsbColor, _canvasWidth, _canvasHeight, _drawHeight);
-    const reedFactory = new ReedFactory(p5, _canvasWidth, _drawHeight, _canvasHeight, snowGlobeFactory)
-    const artist = new ReedArtist(p5, reedFactory, _canvasWidth, _canvasHeight, _drawHeight)
+    const sunFactory = new SunFactory(p5, _canvasWidth, _canvasHeight);
+    const snowGlobeFactory = new SnowGlobeFactory(p5, sunFactory, hsbColor, _canvasWidth, _canvasHeight, _drawHeight);
+    const reedFactory = new ReedFactory(p5, _canvasWidth, _drawHeight, _canvasHeight, sunFactory)
+    const artist = new ReedArtist(p5, reedFactory, snowGlobeFactory, _canvasWidth, _canvasHeight, _drawHeight)
 
     p5.setup = () => 
     {

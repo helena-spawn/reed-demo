@@ -1,31 +1,33 @@
 import P5 from "p5";
-import Bottom from "./shapes/bottom";
-import SnowGlobe from "./shapes/snowGlobe";
-import Sun from "./shapes/sun";
+import Bottom from "../shapes/bottom";
+import SnowGlobe from "../shapes/snowGlobe";
+import SunFactory from "./sunFactory";
 
 export default class SnowGlobeFactory
 {
     _p5: P5;
+    _sunFactory: SunFactory;
     _canvasHeight: number;
     _canvasWidth: number;
     _drawHeight: number;
     _bottomColor: string;
     _strokeColor: string;
-    constructor(p5: P5, hsbColor: number, canvasWidth: number, canvasHeight: number, drawHeight: number)
+    constructor(p5: P5, sunFactory: SunFactory, hsbColor: number, canvasWidth: number, canvasHeight: number, drawHeight: number)
     {
         this._p5 = p5;
+        this._sunFactory = sunFactory;
         this._canvasWidth = canvasWidth;
         this._canvasHeight = canvasHeight;
         this._drawHeight = drawHeight;
         this._setupColorScheme(hsbColor);
     }
 
-    createSnowGlobe = (): SnowGlobe =>
+    create = (): SnowGlobe =>
     {
         const bottomShapeLines = this._setupBottom();
         const bottom = new Bottom(this._p5, bottomShapeLines, this._bottomColor);
 
-        const sun = new Sun(this._p5, this._canvasWidth, this._canvasHeight);
+        const sun = this._sunFactory.create();
         const snowGlobe = new SnowGlobe(sun, bottom);
         return snowGlobe;
     }

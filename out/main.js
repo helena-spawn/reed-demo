@@ -17075,9 +17075,9 @@ var import_p53 = __toModule(require_p5_min());
 
 // src/reedArtist.ts
 var ReedArtist = class {
-  constructor(p5, reedFactory, canvasWidth, canvasHeight, drawHeight) {
+  constructor(p5, reedFactory, snowGlobeFactory, canvasWidth, canvasHeight, drawHeight) {
     this.create = () => {
-      this._snowGlobe = this._reedFactory.snowGlobe;
+      this._snowGlobe = this._snowGlobeFactory.create();
       const numberOfReeds = this._p5.floor(this._p5.randomGaussian(1.5, 2));
       if (numberOfReeds <= 1) {
         const reed = this._reedFactory.createReed(0.5 * this._canvasWidth, 0.3 * this._canvasHeight);
@@ -17105,6 +17105,7 @@ var ReedArtist = class {
       }
     };
     this._p5 = p5;
+    this._snowGlobeFactory = snowGlobeFactory;
     this._reedFactory = reedFactory;
     this._canvasWidth = canvasWidth;
     this._canvasHeight = canvasHeight;
@@ -17113,7 +17114,7 @@ var ReedArtist = class {
   }
 };
 
-// src/reedFactory.ts
+// src/factories/reedFactory.ts
 var import_p5 = __toModule(require_p5_min());
 
 // src/shapes/branch.ts
@@ -17251,9 +17252,9 @@ var DirectionType;
 })(DirectionType || (DirectionType = {}));
 var directionType_default = DirectionType;
 
-// src/reedFactory.ts
+// src/factories/reedFactory.ts
 var ReedFactory = class {
-  constructor(p5, canvasWidth, drawHeight, canvasHeight, snowGlobeFactory) {
+  constructor(p5, canvasWidth, drawHeight, canvasHeight, sunFactory) {
     this.createReed = (x, height) => {
       const allBranches = this._create(x, height);
       const reed = new Reed(this._p5, allBranches);
@@ -17348,8 +17349,7 @@ var ReedFactory = class {
     this._counter = 0;
     this._numberOfFirstLevelBranches = 10;
     this._numberOfSubLevelBranches = 2;
-    this.snowGlobe = snowGlobeFactory.createSnowGlobe();
-    this._sun = this.snowGlobe._arc;
+    this._sun = sunFactory.create();
   }
 };
 
@@ -17384,6 +17384,38 @@ var SnowGlobe = class {
     };
     this._bottom = bottom;
     this._arc = arc;
+  }
+};
+
+// src/factories/snowGlobeFactory.ts
+var SnowGlobeFactory = class {
+  constructor(p5, sunFactory, hsbColor, canvasWidth, canvasHeight, drawHeight) {
+    this.create = () => {
+      const bottomShapeLines = this._setupBottom();
+      const bottom = new Bottom(this._p5, bottomShapeLines, this._bottomColor);
+      const sun = this._sunFactory.create();
+      const snowGlobe = new SnowGlobe(sun, bottom);
+      return snowGlobe;
+    };
+    this._setupBottom = () => {
+      const bottomBoxLines = new Array();
+      bottomBoxLines.push(this._p5.createVector(0, this._drawHeight));
+      bottomBoxLines.push(this._p5.createVector(this._canvasWidth, this._drawHeight));
+      bottomBoxLines.push(this._p5.createVector(this._canvasWidth, this._canvasHeight));
+      bottomBoxLines.push(this._p5.createVector(0, this._canvasHeight));
+      bottomBoxLines.push(this._p5.createVector(0, this._drawHeight));
+      return bottomBoxLines;
+    };
+    this._setupColorScheme = (hsbColor) => {
+      this._bottomColor = "hsb(" + hsbColor + ", 40%, 40%)";
+      this._strokeColor = "black";
+    };
+    this._p5 = p5;
+    this._sunFactory = sunFactory;
+    this._canvasWidth = canvasWidth;
+    this._canvasHeight = canvasHeight;
+    this._drawHeight = drawHeight;
+    this._setupColorScheme(hsbColor);
   }
 };
 
@@ -17427,34 +17459,16 @@ var Sun = class {
   }
 };
 
-// src/snowGlobeFactory.ts
-var SnowGlobeFactory = class {
-  constructor(p5, hsbColor, canvasWidth, canvasHeight, drawHeight) {
-    this.createSnowGlobe = () => {
-      const bottomShapeLines = this._setupBottom();
-      const bottom = new Bottom(this._p5, bottomShapeLines, this._bottomColor);
+// src/factories/sunFactory.ts
+var SunFactory = class {
+  constructor(p5, canvasWidth, canvasHeight) {
+    this.create = () => {
       const sun = new Sun(this._p5, this._canvasWidth, this._canvasHeight);
-      const snowGlobe = new SnowGlobe(sun, bottom);
-      return snowGlobe;
-    };
-    this._setupBottom = () => {
-      const bottomBoxLines = new Array();
-      bottomBoxLines.push(this._p5.createVector(0, this._drawHeight));
-      bottomBoxLines.push(this._p5.createVector(this._canvasWidth, this._drawHeight));
-      bottomBoxLines.push(this._p5.createVector(this._canvasWidth, this._canvasHeight));
-      bottomBoxLines.push(this._p5.createVector(0, this._canvasHeight));
-      bottomBoxLines.push(this._p5.createVector(0, this._drawHeight));
-      return bottomBoxLines;
-    };
-    this._setupColorScheme = (hsbColor) => {
-      this._bottomColor = "hsb(" + hsbColor + ", 40%, 40%)";
-      this._strokeColor = "black";
+      return sun;
     };
     this._p5 = p5;
     this._canvasWidth = canvasWidth;
     this._canvasHeight = canvasHeight;
-    this._drawHeight = drawHeight;
-    this._setupColorScheme(hsbColor);
   }
 };
 
@@ -17467,9 +17481,10 @@ var sketch = (p5) => {
   const _debug = false;
   const hsbColor = p5.floor(p5.randomGaussian(180, 50));
   const _backgroundColor = "hsb(" + hsbColor + " , 40%, 80%)";
-  const snowGlobeFactory = new SnowGlobeFactory(p5, hsbColor, _canvasWidth, _canvasHeight, _drawHeight);
-  const reedFactory = new ReedFactory(p5, _canvasWidth, _drawHeight, _canvasHeight, snowGlobeFactory);
-  const artist = new ReedArtist(p5, reedFactory, _canvasWidth, _canvasHeight, _drawHeight);
+  const sunFactory = new SunFactory(p5, _canvasWidth, _canvasHeight);
+  const snowGlobeFactory = new SnowGlobeFactory(p5, sunFactory, hsbColor, _canvasWidth, _canvasHeight, _drawHeight);
+  const reedFactory = new ReedFactory(p5, _canvasWidth, _drawHeight, _canvasHeight, sunFactory);
+  const artist = new ReedArtist(p5, reedFactory, snowGlobeFactory, _canvasWidth, _canvasHeight, _drawHeight);
   p5.setup = () => {
     p5.createCanvas(_canvasWidth, _canvasHeight);
     artist.create();

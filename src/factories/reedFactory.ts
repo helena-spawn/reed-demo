@@ -1,10 +1,9 @@
 import P5 from "p5";
-import Branch from "./shapes/branch";
-import Sun from "./shapes/sun";
-import Reed from "./shapes/reed";
-import DirectionType from "./directionType";
-import SnowGlobeFactory from "./snowGlobeFactory";
-import SnowGlobe from "./shapes/snowGlobe";
+import Branch from "../shapes/branch";
+import Sun from "../shapes/sun";
+import Reed from "../shapes/reed";
+import DirectionType from "../directionType";
+import SunFactory from "./sunFactory";
 
 export default class ReedFactory
 {
@@ -16,10 +15,10 @@ export default class ReedFactory
     _sun: Sun;
     _numberOfFirstLevelBranches: number;
     _numberOfSubLevelBranches: number;
-    snowGlobe: SnowGlobe;
+    sunFactory: SunFactory;
 
     constructor(p5: P5, canvasWidth: number, drawHeight: number, canvasHeight: number, 
-        snowGlobeFactory: SnowGlobeFactory)
+        sunFactory: SunFactory)
     {
         this._p5 = p5;
         this._canvasWidth = canvasWidth;
@@ -30,8 +29,7 @@ export default class ReedFactory
         this._numberOfFirstLevelBranches = 10 ;
         this._numberOfSubLevelBranches = 2;
 
-        this.snowGlobe = snowGlobeFactory.createSnowGlobe();
-        this._sun = this.snowGlobe._arc;
+        this._sun = sunFactory.create();
     }
 
     createReed = (x: number, height: number): Reed =>
