@@ -1,5 +1,5 @@
 import P5 from "p5";
-import Branch from "./Branch";
+import Branch from "./branch";
 
 export default class Reed
 {
