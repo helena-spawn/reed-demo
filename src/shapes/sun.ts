@@ -48,4 +48,34 @@ export default class Sun
             this._curveEndControlX, 
             this._curveEndControlY);
 	};
+
+    attract = (branchEnd: P5.Vector, t: number): P5.Vector =>
+    {
+        const location = this._getLocation(t);
+        const force = P5.Vector.sub(location, branchEnd);
+        let distance = force.mag();
+        distance = this._p5.constrain(distance, 5.0, 25.0);
+        force.normalize();
+        const strength = this.solarForce * distance;
+        force.mult(strength);
+        return force;
+    }
+
+    _getLocation = (t: number): P5.Vector =>
+    {
+        const x = this._p5.curvePoint(
+            this._curveStartControlX, 
+            this._curveStartX,
+            this._curveEndX, 
+            this._curveEndControlX, 
+            t);
+        const y = this._p5.curvePoint(
+            this._curveStartControlY, 
+            this._curveStartY,
+            this._curveEndY, 
+            this._curveEndControlY, 
+            t);
+        const location = this._p5.createVector(x, y);
+        return location;
+    }
 }

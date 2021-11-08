@@ -1,7 +1,8 @@
 import P5 from "p5";
-import Bottom from "./shapes/bottom";
+import ReedFactory from "./factories/reedFactory";
+import SnowGlobeFactory from "./factories/snowGlobeFactory";
+import Reed from "./shapes/reed";
 import SnowGlobe from "./shapes/snowGlobe";
-import Sun from "./shapes/sun";
 
 export default class ReedArtist
 {
@@ -11,39 +12,72 @@ export default class ReedArtist
     _canvasHeight: number;
     _canvasWidth: number;
     _drawHeight: number;
-    constructor(p5: P5, hsbColor: number, canvasWidth: number, canvasHeight: number, drawHeight: number)
+    _reedFactory: ReedFactory;
+    _snowGlobeFactory: SnowGlobeFactory;
+    shapes: Array<Reed>;
+    _snowGlobe: SnowGlobe;
+
+    constructor(p5: P5, 
+        reedFactory: ReedFactory,  
+        snowGlobeFactory: SnowGlobeFactory,
+        canvasWidth: number, 
+        canvasHeight: number, 
+        drawHeight: number)
     {
         this._p5 = p5;
-        this._setupColorScheme(hsbColor);
+        this._snowGlobeFactory = snowGlobeFactory;
+        this._reedFactory = reedFactory;
+        
         this._canvasWidth = canvasWidth;
         this._canvasHeight = canvasHeight;
         this._drawHeight = drawHeight;
+        this.shapes = new Array<Reed>();
     }
 
-    createSnowGlobe = (): SnowGlobe =>
+    create = (): void =>
     {
-        const bottomShapeLines = this._setupBottom();
-        const bottom = new Bottom(this._p5, bottomShapeLines, this._bottomColor);
-
-        const sun = new Sun(this._p5, this._canvasWidth, this._canvasHeight);
-        const snowGlobe = new SnowGlobe(sun, bottom);
-        return snowGlobe;
+        this._snowGlobe = this._snowGlobeFactory.create();
+        const numberOfReeds = this._p5.floor(this._p5.randomGaussian(1.5, 2));
+		if (numberOfReeds <= 1)
+		{
+            const reed = this._reedFactory.createReed(0.5 * this._canvasWidth, 0.3 * this._canvasHeight);
+			this.shapes.push(reed);
+		}
+		else if (numberOfReeds == 2)
+		{
+            let reed = this._reedFactory.createReed(0.5 * this._canvasWidth, 0.3 * this._canvasHeight);
+            this.shapes.push(reed);
+            reed = this._reedFactory.createReed(0.25 * this._canvasWidth, 0.4 * this._canvasHeight)
+            this.shapes.push(reed);
+		}
+		else if (numberOfReeds >= 3)
+		{
+			let reed = this._reedFactory.createReed(0.5 * this._canvasWidth, 0.3 * this._canvasHeight);
+            this.shapes.push(reed);
+			reed = this._reedFactory.createReed(0.25 * this._canvasWidth, 0.4 * this._canvasHeight);
+            this.shapes.push(reed);
+			reed = this._reedFactory.createReed(0.75 * this._canvasWidth, 0.5 * this._canvasHeight);
+            this.shapes.push(reed);
+		}
     }
 
-    _setupBottom = (): Array<P5.Vector> =>
+    draw = (debug: boolean): void =>
     {
-        const bottomBoxLines = new Array<P5.Vector>();
-        bottomBoxLines.push(this._p5.createVector(0, this._drawHeight));
-        bottomBoxLines.push(this._p5.createVector(this._canvasWidth, this._drawHeight));
-        bottomBoxLines.push(this._p5.createVector(this._canvasWidth, this._canvasHeight));
-        bottomBoxLines.push(this._p5.createVector(0, this._canvasHeight));
-        bottomBoxLines.push(this._p5.createVector(0, this._drawHeight));
-        return bottomBoxLines;
+        this._snowGlobe.display(debug);
+        if (this.shapes.length > 0)
+        {
+            this.shapes.forEach(element => 
+            {
+                element.display(debug);
+            });
+        }
+    };
+
+    animate = (x: number): void =>
+    {
+        this.shapes.forEach(element => {
+            element.animate(x);
+        });
     }
 
-    _setupColorScheme = (hsbColor: number) =>
-    {
-		this._bottomColor = "hsb(" + hsbColor + ", 40%, 40%)";
-		this._strokeColor = "black";
-    }
 }
