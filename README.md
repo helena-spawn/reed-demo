@@ -3,12 +3,12 @@
 # Waving Reed in a snowglobe (p5.js)
 
 ## Introduction
-In the previous article I talked about creating waving grass in a p5.js project using typescript. In this article I want to talk about a similar style of sketch but now with a focus on 'tree like structures' with branches as an intermediate step to the full blown trees. This project as a stepping stone to having actual trees I call 'Waving reed in a snowglobe'.
+In the previous article I talked about creating waving grass in a p5.js project using typescript. In this article I want to talk about a similar style of sketch but now with a focus on 'tree like structures' with branches as an intermediate step to the full blown trees. This project, as a stepping stone to having actual trees, I call 'Waving reed in a snowglobe'.
 
 ![](./doc/images/reed.gif)
 
 ### Branches and growth
-When you look at how nature makes trees grow there is some algorithmic logic to be distilled right? A sapling starts growing from a seed in the ground towards the sky (or is it away from gravity's pull). Once above ground it will grow further to the sky while expanding it's diameter becoming a more sturdy trunk and while branches appear. First one to the left then another to the right. These branches behave like the main branch, grow toward the light, increase in diameter (still relative to the main branch) and develop it's own sub branches.
+When you look at how nature makes trees grow there is some algorithmic logic to be distilled right? A sapling starts growing from a seed in the ground towards the sky (or is it away from gravity's pull). Once above ground it will grow further to the sky while expanding it's diameter becoming a more sturdy trunk and and in the meantime branches appear. First one to the left then another to the right. These branches behave like the main branch, grow toward the light, increase in diameter (still relative to the main branch) and develop it's own sub branches.
 
 ![](./doc/images/tree-growth.png)
 
@@ -62,7 +62,6 @@ When you clone the repository you will get a project structure like this.
     │  ├─ shapes
     │  │  ├─ bottom.ts
     │  │  ├─ branch.ts
-    │  │  ├─ branch.ts
     │  │  ├─ reed.ts
     │  │  ├─ snowGlobe.ts
     │  ├─ directionType.ts
@@ -83,7 +82,7 @@ The `snowGlobe` object is a tongue in cheek representation/visualisation of the 
 ![](./doc/images/emptyGlobe.png)
 
 ## The sun
-The `sun` object then basically is just a curve and an attractor positioned on the curve at time t and implements an attract function that takes the end of a branch (in the form of a vector) and a t, range 0 to 1 to get s specific location on the curve.
+The `sun` object then basically is just a curve and an attractor positioned on the curve at time `t` and implements an attract function that takes the end of a branch (in the form of a vector) and a `t`, range 0 to 1 to get a specific location on the curve.
 
     attract = (branchEnd: P5.Vector, t: number): P5.Vector =>
     {
@@ -99,7 +98,7 @@ The `sun` object then basically is just a curve and an attractor positioned on t
 
 What I want to express here is a attraction force on a 'growing' branch. This force has a direct relation with the position of the 'sun' on the curve and the distance of the 'growing' branch and the attractor object.
 
-`_getLocation()` is the function to determine a position on the curve at t where t between 0 and 1 using p5's curvepoint function.
+`_getLocation()` is the function to determine a position on the curve at `t` where `t` between 0 and 1 using p5's curvepoint function.
 
     _getLocation = (t: number): P5.Vector =>
     {
@@ -120,7 +119,7 @@ What I want to express here is a attraction force on a 'growing' branch. This fo
     }
 
 ## The reedFactory
-The `reedFactory` class is where all the nasty work of branch creation is done. The `reedFactory` is constructed with details on the canvas we are drawing on and gets a reference to the sun object to determince the attraction force at a certain moment in time.
+The `reedFactory` class is where all the nasty work of branch creation is done. The `reedFactory` is constructed with details of the canvas we are drawing on and gets a reference to the `sun` object to determine the attraction force at a certain moment in time.
 
 Furthermore the `reedFactory` has the notion of the number of branches it needs to create.
 
@@ -134,23 +133,31 @@ Furthermore the `reedFactory` has the notion of the number of branches it needs 
 
 If we break down the `_create` function we can see the following logic.
 
-- create a main branch
-- create a sub branch on this main branch (loop)
+- create a main trunk
+- create a branch on this trunk (loop)
     - while doing that determine the general direction to grow to (EAST or WEST)
     - position the sun in the eastern of western 'hemisphere' 
     - create a branch starting from the parent in the direction of the sun (attractor)
-    - and of course use some recursion for the sub branches
-
-Create Main branch or trunk if you will.
+    - and of course use some recursion for the additional sub branches
+Which looks like this.
 
     _create = (x: number, height: number): Array<Branch> =>
     {
         let result = new Array<Branch>();
         
-        const mainBranch = this._createMain(x, height);
-        result.push(mainBranch);
+        const trunk = this._createTrunk(x, height);
+        result.push(trunk);
+        for (let i = 1; i < this._numberOfFirstLevelBranches; i++)
+        {
+            const direction = this._determineCardinalDirection(i);
+            const level = 1 - (i / this._numberOfFirstLevelBranches);
+            this._createBranch(trunk, direction, result, i, level, this._numberOfFirstLevelBranches);
+        }
 
-And the `_createMain` implementation itself is just creating a start and end vector and some corresponding control vectors for curve operations.
+        return result;
+    }
+
+And the `_createTrunk` implementation itself is just creating a start and end vector and some corresponding control vectors for curve operations.
 
     _createTrunk = (x: number, height: number): Branch =>
     {
@@ -210,7 +217,7 @@ This method can be broken down in the following logic:
 (see the code repository to examine the details more closely)
 
 ## The reed and branch objects
-The `branch` object is very similar to the `grass` object from my previous article with just a curve definition and an animate function. The main difference can be found in the rewrite start function. The windforce that is moving the branch objects will change the curve of the object, but that means that the connected branch is also moving. The `rewriteStart` function makes sure that the curve's start stays connected to the parent branch.
+The `branch` object is very similar to the `grass` object from my previous article with just a curve definition and an `animate` function. The main difference can be found in the `rewriteStart` function. The windforce that is moving the branch objects will change the curve of the object, but that means that the connected branch is also moving. The `rewriteStart` function makes sure that the curve's start stays connected to the parent branch.
 
     rewriteStart = (): void =>
     {
@@ -231,7 +238,7 @@ The `branch` object is very similar to the `grass` object from my previous artic
         }
     }
 
-The `reed` object is then actually just a container object for the interconnected branches with a display and an animate function to display and animate the branches.
+The `reed` object is then actually just a container object for the interconnected branches with a `display` and an `animate` function to display and move the branches.
 
     display = (debug: boolean):void =>
     {
