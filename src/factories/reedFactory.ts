@@ -17,7 +17,10 @@ export default class ReedFactory
     _numberOfSubLevelBranches: number;
     sunFactory: SunFactory;
 
-    constructor(p5: P5, canvasWidth: number, drawHeight: number, canvasHeight: number, 
+    constructor(p5: P5, 
+        canvasWidth: number, 
+        drawHeight: number, 
+        canvasHeight: number, 
         sunFactory: SunFactory)
     {
         this._p5 = p5;
@@ -26,8 +29,8 @@ export default class ReedFactory
         this._canvasHeight = canvasHeight;
         this._counter = 0;
         
-        this._numberOfFirstLevelBranches = 10 ;
-        this._numberOfSubLevelBranches = 2;
+        this._numberOfFirstLevelBranches = 11;
+        this._numberOfSubLevelBranches = 6;
 
         this._sun = sunFactory.create();
     }
@@ -42,63 +45,36 @@ export default class ReedFactory
 
     _create = (x: number, height: number): Array<Branch> =>
     {
-        const result = new Array<Branch>();
-        const mainBranch = this._createMainBranch(x, height);
-        result.push(mainBranch);
+        let result = new Array<Branch>();
+        
+        const trunk = this._createTrunk(x, height);
+        result.push(trunk);
 
         for (let i = 1; i < this._numberOfFirstLevelBranches; i++)
         {
-            const direction = this._determineDirection(i);
-            const sunPositionOnCurve = this._determineSunPositionOnCurveForDirection(i, direction);
-            const branch = this._createBranch(mainBranch, 1 - (i / 10), sunPositionOnCurve);
-            result.push(branch);
-
-            for (let j = 1; j < this._numberOfSubLevelBranches; j++)
-            {
-                if (direction == DirectionType.EAST)
-                {
-                    let newSunPositionOnCurve = sunPositionOnCurve + this._p5.randomGaussian(0, 0.15);
-                    let level = this._p5.constrain(this._p5.randomGaussian(0.2, 0.2), 0.2, 0.5);
-                    const newBranch =this._createBranch(branch, level, newSunPositionOnCurve); 
-                    result.push(newBranch);
-
-                    newSunPositionOnCurve = newSunPositionOnCurve + this._p5.randomGaussian(0, 0.15);
-                    level = this._p5.constrain(this._p5.randomGaussian(0.2, 0.2), 0.2, 0.5);
-                    result.push(this._createBranch(newBranch, j / 6, newSunPositionOnCurve));
-                }
-                else
-                {
-                    let newSunPositionOnCurve = sunPositionOnCurve + this._p5.randomGaussian(0, 0.2);
-                    let level = this._p5.constrain(this._p5.randomGaussian(0.2, 0.2), 0.2, 0.5);
-                    const newBranch =this._createBranch(branch, level, newSunPositionOnCurve); 
-                    result.push(newBranch);
-
-                    newSunPositionOnCurve = newSunPositionOnCurve + this._p5.randomGaussian(0, 0.2);
-                    level = this._p5.constrain(this._p5.randomGaussian(0.2, 0.2), 0.2, 0.5);
-                    result.push(this._createBranch(newBranch, j / 6, newSunPositionOnCurve));
-                }
-            }
+            const direction = this._determineCardinalDirection(i);
+            const level = 1 - (i / this._numberOfFirstLevelBranches);
+            this._createBranch(trunk, direction, result, i, level, this._numberOfFirstLevelBranches);
         }
 
         return result;
     }
-
     
     _determineSunPositionOnCurveForDirection = (i: number, direction: DirectionType): number =>
     {
         let sunTime = 0;
         if (direction == DirectionType.EAST)
         {
-            sunTime = this._p5.map(i, 1, this._numberOfFirstLevelBranches, 1, 0.5);
+            sunTime = this._p5.map(i, 1, this._numberOfFirstLevelBranches, 0.85, 0.5);
         }
         else
         {
-            sunTime = this._p5.map(i, 1, this._numberOfFirstLevelBranches, 0.1, 0.5);
+            sunTime = this._p5.map(i, 1, this._numberOfFirstLevelBranches, 0.15, 0.5);
         }
         return sunTime;
     }
 
-    _determineDirection = (counter: number): DirectionType =>
+    _determineCardinalDirection = (counter: number): DirectionType =>
     {
         if (counter % 2 == 0)
         {
@@ -107,15 +83,15 @@ export default class ReedFactory
         return DirectionType.WEST;        
     }
 
-    _createMainBranch = (x: number, height: number): Branch =>
+    _createTrunk = (x: number, height: number): Branch =>
     {
         const start = this._p5.createVector(x, height);
         const end = this._p5.createVector(x, this._drawHeight);
         const startControl = this._createStartControl(start, end);
         const endControl = this._createEndControl(start, end);
 
-        const mainBranch = new Branch(this._p5, start, startControl, end, endControl, undefined, undefined);
-        return mainBranch;
+        const trunk = new Branch(this._p5, start, startControl, end, endControl, undefined, undefined);
+        return trunk;
     }
 
     _createStartControl = (start: P5.Vector, end: P5.Vector): P5.Vector =>
@@ -138,19 +114,48 @@ export default class ReedFactory
         return endControl;
     }
 
-    _createBranch = (parent: Branch, level: number, t: number): Branch => 
+    _createBranch = (parent: Branch, 
+        direction: DirectionType, 
+        branchContainer: Array<Branch>, 
+        index: number, 
+        level: number, 
+        iterations: number): Array<Branch> => 
     {
-        const x = this._p5.curvePoint(parent.startControl.x, parent.start.x, parent.end.x, parent.endControl.x, level);
-        const y = this._p5.curvePoint(parent.startControl.y, parent.start.y, parent.end.y, parent.endControl.y, level);
-        const start = this._p5.createVector(x, y);
-
+        // create connector to the parent
+        const start = this._getConnectorToTheParent(parent, level);
+        
         const end = start.copy();
-        const attraction = this._sun.attract(end, t).limit(parent.length / 3);
+        
+        // some magic nudging of the sun to get a different growth direction
+        index = index + this._p5.random(-2, 2); 
+        let sunPositionOnCurve = this._determineSunPositionOnCurveForDirection(index, direction);
+        const attraction = this._sun.attract(end, sunPositionOnCurve).limit(parent.length / 2.5);
         end.add(attraction);
 
         const startControl = this._createStartControl(start, end);
         const endControl = this._createEndControl(start, end);
+
         const branch = new Branch(this._p5, end, endControl, start, startControl, parent, level);
-        return branch;
+        branchContainer.push(branch);
+
+        if (iterations == 0)
+        {  
+            return branchContainer;
+        }
+        else
+        {
+            // some magic nudging of the level to obtain different connector nodes 
+            // in the next recursive call
+            const nextLevel = this._p5.constrain(this._p5.randomGaussian(0.3, 0.5), 0.1, 0.8);
+            this._createBranch(branch, direction, branchContainer, index, nextLevel, iterations -1);
+        }
+    }
+
+    _getConnectorToTheParent = (parent: Branch, level): P5.Vector =>
+    {
+        const x = this._p5.curvePoint(parent.startControl.x, parent.start.x, parent.end.x, parent.endControl.x, level);
+        const y = this._p5.curvePoint(parent.startControl.y, parent.start.y, parent.end.y, parent.endControl.y, level);
+        const start = this._p5.createVector(x, y);
+        return start;
     }
 }

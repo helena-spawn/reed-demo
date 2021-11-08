@@ -72,4 +72,12 @@ export default class ReedArtist
             });
         }
     };
+
+    animate = (x: number): void =>
+    {
+        this.shapes.forEach(element => {
+            element.animate(x);
+        });
+    }
+
 }

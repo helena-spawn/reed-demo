@@ -49,10 +49,10 @@ export default class Sun
             this._curveEndControlY);
 	};
 
-    attract = (branch: P5.Vector, t: number): P5.Vector =>
+    attract = (branchEnd: P5.Vector, t: number): P5.Vector =>
     {
         const location = this._getLocation(t);
-        const force = P5.Vector.sub(location, branch);
+        const force = P5.Vector.sub(location, branchEnd);
         let distance = force.mag();
         distance = this._p5.constrain(distance, 5.0, 25.0);
         force.normalize();

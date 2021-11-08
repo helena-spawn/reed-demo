@@ -31,5 +31,10 @@ const sketch = (p5: P5) =>
         artist.draw(_debug);
     };
 
+    p5.mousePressed = () =>
+    {
+        artist.animate(p5.mouseX);
+    };
+
 }
 const mySketch = new P5(sketch);
